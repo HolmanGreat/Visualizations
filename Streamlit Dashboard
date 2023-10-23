@@ -1,0 +1,95 @@
+#Installing dependencies
+!pip -q install streamlit
+!pip -q install plost
+
+
+%%writefile dash.py
+import streamlit as st
+import plost
+import pandas as pd
+
+
+st.set_page_config(initial_sidebar_state = "expanded" ,layout = "wide")
+
+st.sidebar.header("**Streamlit Dashboard** :green[version 1.0]")
+st.sidebar.subheader("Bar Chart parameters")
+st.sidebar.selectbox("Color by", ["min","max"])
+
+st.sidebar.subheader("Donut Chart Parameters")
+st.sidebar.selectbox("Select data", ["High income", "Low income", "Lower middle income",
+       "Upper middle income"])
+
+st.sidebar.subheader("Line Chart Parameters")
+plot_data = st.sidebar.multiselect("Select data",
+["Open","Close","High","Low","Adj Close", "Volume"],
+["Open","Close"])
+
+plot_height = st.sidebar.slider(label = "Specify plot height", min_value = 200, max_value = 500, value = 250)
+
+
+st.sidebar.markdown("""
+---
+Streamlit dashboard🌍 by G.Holman (github.com/HolmanGreat) 
+""")
+
+
+#Metrics
+st.markdown("###Metrics")
+col1, col2, col3 = st.columns(3)
+col1.metric(label = "TSLA", value = "213", delta="1.2")
+col2.metric(label = "TSLA", value = "212.14", delta = "-0.4%")
+col3.metric(label = "TSLA", value = "218.4", delta = "5%")
+
+
+#Loading data
+stocks = pd.read_csv("/content/TESLA.csv")
+country_income_group = pd.read_csv("/content/country_codes.csv")
+gdp = pd.read_csv("/content/gdp_data.csv")
+
+
+# Assuming your DataFrame is named 'gdp_data'
+# And you want to select the GDP_value for  2022
+year_to_select = 2022
+
+# Create empty lists to store the results
+selected_countries = []
+selected_gdp_values = []
+
+# Loop through the DataFrame
+for index, row in gdp.iterrows():
+    if row['year'] == year_to_select:
+        selected_countries.append(row['country_name'])
+        selected_gdp_values.append(row['value'])
+
+
+# Create a new DataFrame from the lists called 'gdp_2022'
+# Contains the selected data for the year 2022
+gdp_2022 = pd.DataFrame({'Country': selected_countries, 'GDP_Value': selected_gdp_values, 'Year':2022})
+
+
+
+
+
+
+#Creating plots
+p1,p2 = st.columns((7,3))
+with p1:
+    st.markdown("### GDP Values Of Countries 2022")
+    plost.bar_chart(data = gdp_2022,
+           bar = "Country", value="GDP_Value",use_container_width=True)
+
+
+with p2:
+    st.markdown("### Income Groups Of Countries")
+    plost.donut_chart(data = country_income_group,
+           theta = "income_group", color = "region", use_container_width=True)
+
+#Third plot
+st.markdown("### Line Chart(Tesla Stock)")
+st.line_chart(data = stocks, x = "Date", y = plot_data,
+height = plot_height)
+
+
+#To view dashboard app on local browser/server... while using Google Colab 
+#Use the line of code below 
+!streamlit run dash.py & npx localtunnel --port 8501
